@@ -1,11 +1,12 @@
+
 from pymongo import MongoClient
 from datetime import datetime
 import pymongo
 
 # Connect to MongoDB
-connection_url="your_url_here"
+connection_url="your_url"
 client = MongoClient(connection_url)
-db = client["comp_353_5"]
+db = client["comp_353"]
 
 
 #define train class in python with save functions
@@ -344,13 +345,132 @@ def getTrainsAndBussesBetweenTime(start, end):
     print()
 
 
+
+# Query get_buses_for_station
+def get_buses_for_station(station_name):
+    """
+    Gets buses scheduled for a specific station
+    Output: bID, bRoute, bDirection, arrival_time, departure_time
+    Relations: bus_schedule, bus
+    """
+    pipeline = [
+        {
+            "$addFields": {
+                "stopNames": {"$map": {"input": "$bRoute", "as": "stop", "in": "$$stop.sName"}}
+            }
+        },
+        {"$match": {"stopNames": station_name}},
+        {"$lookup": {
+            "from": "bus",
+            "localField": "bID",
+            "foreignField": "bID",
+            "as": "bus_details"
+        }},
+        {"$unwind": "$bus_details"},
+        {
+            "$project": {
+                "_id": 0,
+                "bID": 1,
+                "bRoute": 1,
+                "bDirection": 1,
+                "arrival_time": {
+                    "$let": {
+                        "vars": {
+                            "idx": {"$indexOfArray": ["$stopNames", station_name]}
+                        },
+                        "in": {"$arrayElemAt": ["$bArrivalTime", "$$idx"]}
+                    }
+                },
+                "departure_time": {
+                    "$let": {
+                        "vars": {
+                            "idx": {"$indexOfArray": ["$stopNames", station_name]}
+                        },
+                        "in": {"$arrayElemAt": ["$bDepartureTime", "$$idx"]}
+                    }
+                },
+                "bStopNum": "$bus_details.bStopNum"
+            }
+        }
+    ]
+
+    results = list(db.bus_schedule.aggregate(pipeline))
+        
+    print(f"\nBuses scheduled for {station_name} station:")
+    for bus in results:
+        print(f"\nBus ID: {bus['bID']}")
+        print(f"Route: {bus['bRoute']}")
+        print(f"Direction: {bus['bDirection']}")
+        print(f"Arrival: {bus['arrival_time'].strftime('%Y-%m-%d %H:%M')}")
+        print(f"Departure: {bus['departure_time'].strftime('%Y-%m-%d %H:%M')}")
+        print(f"Total stops: {bus['bStopNum']}")
+        print("----------------------------")
+
+def possibleTransfers():
+    # Query
+    people_at_station = db.passenger.find({"pCurrentStation":{"$ne":None}},{"pName","pCurrentStation"})
+    for person in people_at_station:
+        print(f"{person['pName']} is at {person['pCurrentStation'][0]['sName']}")
+        q_bus_route = db.bus_schedule.find({},{"bDirection","bNum","bRoute"})
+        transfer_list_bus = []
+        for n in q_bus_route:
+            route = n["bRoute"]
+            for m in route:
+                if m["sName"] == person["pCurrentStation"][0]["sName"]:
+                    transfer_list_bus.append(f"{n['bNum']}, {n['bDirection']}")
+        # Print
+        if transfer_list_bus:
+            print(f"transfer to bus:")
+        while transfer_list_bus:
+            print(transfer_list_bus.pop())
+        # Query    
+        transfer_list_train = []
+        q_train_route = db.train_schedule.find({},{"tColor","tDirection","tRoute"})
+        for n in q_train_route:
+            route = n["tRoute"]
+            for m in route:
+                if m["sName"] == person["pCurrentStation"][0]["sName"]:
+                    transfer_list_train.append(f"{n['tColor']}, {n['tDirection']}")
+        # Print
+        if transfer_list_train:
+            print("transfer to train:")
+           
+        while transfer_list_train:
+            print(transfer_list_train.pop())
+        print("_________________________________________________________________")
+
+
+
+
+
+print()
+print("Jai Fischer Query Output:")
 start_time = datetime(2025, 4, 14, 12, 0)  # 12:00 PM
 end_time = datetime(2025, 4, 14, 13, 0)    # 1:00 PM
-
 getTrainsAndBussesBetweenTime(start_time,end_time)
+
+
+print()
+print()
+print()
+print("Vaughn Hartzell Query Output:")
 passengers_currently_in_a_station()
+
+
+print()
+print()
+print()
+print("Max Bates Query Output")
+possibleTransfers()
+
+
+print()
+print()
+print()
+print("Zaki Khan Query Output:")
+get_buses_for_station("Howard")
+
 
     
         
-
 

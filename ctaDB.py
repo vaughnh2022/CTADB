@@ -161,7 +161,7 @@ for bus_save in buses:
 
 #define bus_schedule class in python with init and save function
 class bus_schedule:
-    def __init__(self, bDirection, bRoute, bID, bArrivalTime, bDepartureTime, bNum):
+    def __init__(self, bDirection,  bID, bNum, bRoute, bArrivalTime, bDepartureTime):
         self.bDirection = bDirection
         self.bID = bID
         self.bNum = bNum

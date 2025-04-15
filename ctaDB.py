@@ -1,10 +1,11 @@
 from pymongo import MongoClient
 from datetime import datetime
+import pymongo
 
 # Connect to MongoDB
 connection_url="your_url_here"
 client = MongoClient(connection_url)
-db = client["comp_353"]
+db = client["comp_353_5"]
 
 
 #define train class in python with save functions
@@ -146,10 +147,10 @@ class bus:
 
 # tId, tStopNum
 buses = [
-    bus("151A",3),
-    bus("151A",3),
-    bus("274A",2),
-    bus("274B",2)
+    bus("001",3),
+    bus("002",3),
+    bus("003",2),
+    bus("004",2)
 ]
 
 # saves train insertions
@@ -291,5 +292,65 @@ passengers = [
 for passenger_save in passengers:
     passenger_save.save()
 
+def passengers_currently_in_a_station():
+    pipeline = [
+        {"$match": {"pCurrentStation": {"$ne": None}}},
+        {"$project": {"pName": 1,"pBalance": 1,"stationName": {"$arrayElemAt": ["$pCurrentStation.sName", 0]}}},
+        {"$lookup": {"from": "station","localField": "stationName","foreignField": "sName","as": "station_info"}},
+        {"$project": {"_id": 0,"name": "$pName","balance": "$pBalance","current_station": "$stationName", "station_info.sTransfer": 1,
+        "can_transfer_to_bus": "$stationInfo.sTransfer.bus","can_transfer_to_train": "$stationInfo.sTransfer.train"}},
+        {"$sort": {"current_station": 1,"name": 1}}
+    ]
 
-print("compiled")
+    results = list(db.passenger.aggregate(pipeline))
+    # Print the results
+    print("Passengers that are currently in a station and their possibility for a transfer\n")
+    for p in results:
+        print("Name is ",p['name'])
+        print("",p["name"],"'s current station is",p['current_station'])
+        sTransfer=p['station_info'][0]['sTransfer']
+        bus_transfer = "Available" if sTransfer['bus'] else "Not Available"
+        train_transfer = "Available" if sTransfer['train'] else "Not Available"
+        print("Bus transfer is ", bus_transfer," and train transfer is ",train_transfer)
+        print("-----------------------------------------------------------")
+
+def getTrainsAndBussesBetweenTime(start, end):
+    print("\n##### These are the Trains and busses that are scheduled between the times #####\n--",start, "--\nand\n--", end,"--")
+    # Query train schedules in this window
+    train_schedules = db.train_schedule.find({
+        "tDepartureTime": {
+            "$elemMatch": {
+                "$gte": start_time,
+                "$lte": end_time
+            }
+        }
+    })
+    # Query bus schedules in this window
+    bus_schedules = db.bus_schedule.find({
+        "bDepartureTime": {
+            "$elemMatch": {
+                "$gte": start_time,
+                "$lte": end_time
+            }
+        }
+    })
+    # Prints results
+    print("Train schedules between 12:00 PM and 1:00 PM:")
+    for schedule in train_schedules:
+        print(f"Train {schedule['tID']} ({schedule['tColor']} line) going {schedule['tDirection']}")
+    print("\nBus schedules between 12:00 PM and 1:00 PM:")
+    for schedule in bus_schedules:
+        print(f"Bus {schedule['bID']} (Route {schedule['bRoute']}) going {schedule['bDirection']}")
+    print()
+
+
+start_time = datetime(2025, 4, 14, 12, 0)  # 12:00 PM
+end_time = datetime(2025, 4, 14, 13, 0)    # 1:00 PM
+
+getTrainsAndBussesBetweenTime(start_time,end_time)
+passengers_currently_in_a_station()
+
+    
+        
+
+

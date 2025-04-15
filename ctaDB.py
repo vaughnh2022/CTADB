@@ -12,7 +12,7 @@ class Train:
     def __init__(self,tID,tStopNum):
         self.tID = tID
         self.tStopNum = tStopNum
-
+    
     def save(self):
         train_data = {
             "tID": self.tID,
@@ -32,7 +32,7 @@ trains = [
 # saves train insertions
 for train_save in trains:
     train_save.save()
-
+        
 
 #define station class in python with init and save functions
 class Station:
@@ -136,7 +136,7 @@ class bus:
     def __init__(self,bID,bStopNum):
         self.bID = bID
         self.bStopNum = bStopNum
-
+    
     def save(self):
         bus_data = {
             "bID": self.bID,
@@ -214,34 +214,82 @@ for schedule_save in bus_schedules:
 
 #define passenger class in python with save functions
 class Passenger:
-    def __init__(self, pID, pName,pBalance ):
+    def __init__(self, pName,pBalance, pCurrentStation, pPreviousStation):
         self.pBalance = pBalance
         self.pName = pName
-        self.pID = pID
+        self.pCurrentStation = pCurrentStation
+        self.pPreviousStation = pPreviousStation
 
     def save(self):
         passenger_data = {
             "pBalance": self.pBalance,
             "pName": self.pName,
-            "pID": self.pID,
+            "pCurrentStation": self.pCurrentStation,
+            "pPreviousStation": self.pPreviousStation
         }
         db.passenger.insert_one(passenger_data)
 
 
 # Define passenger data
 passengers = [
-    Passenger(1, "Arthur Morgan", 50),
-    Passenger(2, "Mark Zuckerberg", 10),
-    Passenger(3, "Charlie Brown", 76),
-    Passenger(4, "Jane Doe", 22),
-    Passenger(5, "John Smith", 13),
-    Passenger(6, "Emma Watson", 31),
-    Passenger(7, "Bruce Wayne", 10),
-    Passenger(8, "Clark Kent", 6)
+    Passenger("Arthur Morgan", 50, [
+            {"sName": "Howard"},datetime(2025, 4, 14, 21, 55)
+        ], [
+            {"sName": "Loyola"},datetime(2025, 4, 13, 21, 55)
+        ]
+    ),
+    Passenger("Mark Zuckerberg", 10, [
+            {"sName": "Lake"},datetime(2025, 4, 14, 21, 55)
+        ], [
+
+        ]
+    ),
+    Passenger("Charlie Brown", 76,
+            None,
+        [
+            [{"sName": "O'Hare"},datetime(2025, 4, 13, 21, 55)],
+            [{"sName": "Damen"}, datetime(2025, 4, 12, 21, 55)]
+        ]
+    ),
+    Passenger("Jane Doe", 22, [
+            {"sName": "Belmont"},datetime(2025, 4, 14, 21, 55)
+        ], [
+            [{"sName": "Loyola"}, datetime(2025, 4, 13, 21, 55)],
+            [{"sName": "Lake"}, datetime(2025, 4, 12, 21, 55)]
+        ]
+    ),
+    Passenger("John Smith", 13, [
+            {"sName": "O'Hare"},datetime(2025, 4, 14, 21, 55)
+        ], [
+            [{"sName": "Damen"}, datetime(2025, 4, 13, 21, 55)]
+        ]
+    ),
+    Passenger("Emma Watson", 31, [
+            {"sName": "Irving Park"},datetime(2025, 4, 14, 21, 55)
+        ], [
+            [{"sName": "O'Hare"}, datetime(2025, 4, 13, 21, 55)]
+        ]
+    ),
+    Passenger("Bruce Wayne", 10, [
+            {"sName": "Howard"},datetime(2025, 4, 14, 21, 55)
+        ], [
+            [{"sName": "Loyola"}, datetime(2025, 4, 13, 21, 55)],
+            [{"sName": "Lake"}, datetime(2025, 4, 12, 21, 55)]
+        ]
+    ),
+    Passenger("Clark Kent", 6, [
+            {"sName": "Oakton-Skokie"},datetime(2025, 4, 14, 21, 55)
+        ], [
+            [{"sName": "Dempster-Skokie"}, datetime(2025, 4, 13, 21, 55)],
+            [{"sName": "Howard"}, datetime(2025, 4, 12, 21, 55)],
+            [{"sName": "Lake"}, datetime(2025, 4, 11, 21, 55)]
+        ]
+    )
 ]
 
 # Save passenger insertions
 for passenger_save in passengers:
     passenger_save.save()
+
 
 print("compiled")
